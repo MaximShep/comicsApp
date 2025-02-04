@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
-import Svg, { Path, G, Rect } from 'react-native-svg';
+import { StyleSheet, View, TouchableOpacity, Text, Alert } from 'react-native';
+import Svg, { Path, G } from 'react-native-svg';
 
 const App = () => {
   const [lines, setLines] = useState([]);
@@ -72,44 +72,58 @@ const App = () => {
     setTool('fill');
   };
 
-  const handleFill = (x, y) => {
-    // Проверяем, находится ли точка внутри замкнутой области
-    const isInsideClosedArea = lines.some((line) => {
-      const path = line.path.split(' ');
-      let minX = Infinity, maxX = -Infinity;
-      let minY = Infinity, maxY = -Infinity;
+  const isPointInPolygon = (point, polygon) => {
+    let [x, y] = point;
+    let inside = false;
 
-      // Определяем границы области
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      let [xi, yi] = polygon[i];
+      let [xj, yj] = polygon[j];
+
+      let intersect =
+        yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+
+      if (intersect) inside = !inside;
+    }
+
+    return inside;
+  };
+
+  const handleFill = (x, y) => {
+    let foundClosedArea = false;
+
+    lines.forEach((line, index) => {
+      const path = line.path.split(' ');
+      const polygon = [];
+
+      // Преобразуем путь в массив координат
       for (let i = 0; i < path.length; i++) {
         const command = path[i];
         if (command.startsWith('M')) {
           const [_, startX, startY] = command.match(/M([\d.]+),([\d.]+)/).map(Number);
-          minX = Math.min(minX, startX);
-          maxX = Math.max(maxX, startX);
-          minY = Math.min(minY, startY);
-          maxY = Math.max(maxY, startY);
+          polygon.push([startX, startY]);
         } else if (command.startsWith('L')) {
           const [_, endX, endY] = command.match(/L([\d.]+),([\d.]+)/).map(Number);
-          minX = Math.min(minX, endX);
-          maxX = Math.max(maxX, endX);
-          minY = Math.min(minY, endY);
-          maxY = Math.max(maxY, endY);
+          polygon.push([endX, endY]);
         }
       }
 
-      // Проверяем, находится ли точка внутри границ
-      if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-        return true;
+      // Проверяем, находится ли точка внутри полигона
+      if (isPointInPolygon([x, y], polygon)) {
+        // Закрываем путь и добавляем заливку
+        const closedPath = `${line.path} Z`;
+        setLines((prevLines) => {
+          const newLines = [...prevLines];
+          newLines[index] = { ...line, path: closedPath, fill: 'blue' };
+          return newLines;
+        });
+        foundClosedArea = true;
       }
-      return false;
     });
 
-    if (isInsideClosedArea) {
-      // Добавляем заливку
-      setLines((prevLines) => [
-        ...prevLines,
-        { type: 'fill', x, y, width: 50, height: 50, color: 'blue' },
-      ]);
+    if (!foundClosedArea) {
+      // Если точка вне замкнутой области, показываем alert
+      Alert.alert('Ошибка', 'Точка находится вне замкнутой области.');
     }
   };
 
@@ -117,31 +131,17 @@ const App = () => {
     <View style={styles.container}>
       <Svg style={styles.canvas} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <G>
-          {lines.map((line, index) => {
-            if (line.type === 'fill') {
-              return (
-                <Rect
-                  key={index}
-                  x={line.x - 25}
-                  y={line.y - 25}
-                  width={line.width}
-                  height={line.height}
-                  fill={line.color}
-                />
-              );
-            }
-            return (
-              <Path
-                key={index}
-                d={line.path}
-                stroke={line.color}
-                strokeWidth={line.width}
-                strokeLinecap="round"
-                fill="none"
-                strokeOpacity={line.opacity}
-              />
-            );
-          })}
+          {lines.map((line, index) => (
+            <Path
+              key={index}
+              d={line.path}
+              stroke={line.color}
+              strokeWidth={line.width}
+              strokeLinecap="round"
+              fill={line.fill || 'none'} // Добавляем заливку, если она есть
+              strokeOpacity={line.opacity}
+            />
+          ))}
           {currentLine && tool !== 'fill' && (
             <Path
               d={currentLine.path}
