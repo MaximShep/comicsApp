@@ -8,157 +8,212 @@ import {
   Modal,
 } from 'react-native';
 import Svg, { Path, G } from 'react-native-svg';
+import ColorPicker from './src/colorPicker.js';
+
+// Преобразует строку пути в массив точек: [{x, y}, ...]
+const parsePathPoints = (path) => {
+  const tokens = path.trim().split(' ').filter(Boolean);
+  const points = [];
+  tokens.forEach((token) => {
+    const command = token[0];
+    if (command === 'M' || command === 'L') {
+      const coords = token.substring(1).split(',');
+      if (coords.length === 2) {
+        const x = parseFloat(coords[0]);
+        const y = parseFloat(coords[1]);
+        if (!isNaN(x) && !isNaN(y)) {
+          points.push({ x, y });
+        }
+      }
+    }
+  });
+  return points;
+};
+
+// Преобразует массив точек в строку пути для SVG
+const pointsToPath = (points) => {
+  if (points.length === 0) return '';
+  let d = `M${points[0].x},${points[0].y}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L${points[i].x},${points[i].y}`;
+  }
+  return d + ' Z';
+};
+
+// Вычисляет пересечение двух отрезков, если оно есть.
+// p1, p2, p3, p4 – объекты вида {x, y}
+const segmentIntersection = (p1, p2, p3, p4) => {
+  const r = { x: p2.x - p1.x, y: p2.y - p1.y };
+  const s = { x: p4.x - p3.x, y: p4.y - p3.y };
+  const denominator = r.x * s.y - r.y * s.x;
+  if (denominator === 0) return null; // параллельны или коллинеарны
+
+  const uNumerator = (p3.x - p1.x) * r.y - (p3.y - p1.y) * r.x;
+  const tNumerator = (p3.x - p1.x) * s.y - (p3.y - p1.y) * s.x;
+  const t = tNumerator / denominator;
+  const u = uNumerator / denominator;
+  if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+    // пересечение найдено
+    return {
+      x: p1.x + t * r.x,
+      y: p1.y + t * r.y,
+    };
+  }
+  return null;
+};
+
+// Пытается найти первое самопересечение в массиве точек.
+// Возвращает объект { intersection, i, j }:
+// intersection – точка пересечения,
+// i – индекс отрезка (между points[i] и points[i+1]),
+// j – индекс другого отрезка (между points[j] и points[j+1]).
+// Если пересечение не найдено, возвращает null.
+const findSelfIntersection = (points) => {
+  const n = points.length;
+  for (let i = 0; i < n - 2; i++) {
+    for (let j = i + 2; j < n - 1; j++) {
+      // Исключаем соседние отрезки (и случай, когда i==0 и j==n-1, что может совпадать с замыканием)
+      if (i === 0 && j === n - 1) continue;
+      const inter = segmentIntersection(points[i], points[i + 1], points[j], points[j + 1]);
+      if (inter) {
+        return { intersection: inter, i, j };
+      }
+    }
+  }
+  return null;
+};
+
+// Проверяет, замкнут ли путь: либо расстояние между первым и последним пунктом меньше порога,
+// либо линия имеет самопересечение, позволяющее построить замкнутый многоугольник.
+const getClosedPolygonPoints = (points, threshold = 10) => {
+  if (points.length < 3) return null;
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (Math.hypot(last.x - first.x, last.y - first.y) <= threshold) {
+    return points;
+  }
+  // Если начало и конец не совпадают, попробуем найти самопересечение
+  const interData = findSelfIntersection(points);
+  if (interData) {
+    const { intersection, i, j } = interData;
+    // Построим многоугольник, начиная с точки пересечения, затем берем точки от i+1 до j,
+    // и замыкаем многоугольник добавлением точки пересечения.
+    const poly = [intersection, ...points.slice(i + 1, j + 1), intersection];
+    return poly;
+  }
+  return null;
+};
+
+// Алгоритм ray-casting для проверки, находится ли точка внутри многоугольника
+const isPointInsidePolygon = (x, y, polyPoints) => {
+  let inside = false;
+  for (let i = 0, j = polyPoints.length - 1; i < polyPoints.length; j = i++) {
+    const xi = polyPoints[i].x, yi = polyPoints[i].y;
+    const xj = polyPoints[j].x, yj = polyPoints[j].y;
+    const intersect =
+      ((yi > y) !== (yj > y)) &&
+      (x < ((xj - xi) * (y - yi)) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+};
 
 const App = () => {
-  // Состояния для линий, текущей линии, выбранного инструмента, цвета, толщины и прозрачности
   const [lines, setLines] = useState([]);
   const [currentLine, setCurrentLine] = useState(null);
   const [tool, setTool] = useState('pencil'); // 'pencil', 'marker', 'eraser', 'fill'
   const [color, setColor] = useState('black');
   const [width, setWidth] = useState(5);
   const [opacity, setOpacity] = useState(1);
-
-  // Состояния для модальных окон выбора толщины и цвета
   const [widthSelectionVisible, setWidthSelectionVisible] = useState(false);
-  const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
-  // Функция для переключения инструмента. Если выбран тот же инструмент (кроме fill),
-  // то открываем модальное окно для выбора толщины.
   const switchTool = (selectedTool) => {
     if (selectedTool !== 'fill' && tool === selectedTool) {
       setWidthSelectionVisible(true);
     } else {
       setTool(selectedTool);
-      // При смене инструмента можно сбрасывать толщину до значения по умолчанию
       if (selectedTool === 'pencil') setWidth(5);
       if (selectedTool === 'marker') setWidth(20);
       if (selectedTool === 'eraser') setWidth(20);
     }
   };
 
-  // Обработчики переключения инструментов
   const switchToPencil = () => switchTool('pencil');
   const switchToMarker = () => switchTool('marker');
   const switchToEraser = () => switchTool('eraser');
   const switchToFill = () => setTool('fill');
 
-  // Обработчик начала касания по холсту
   const handleTouchStart = (event) => {
     const { locationX, locationY } = event.nativeEvent;
-
     if (tool === 'fill') {
       handleFill(locationX, locationY);
       return;
     }
-
-    // Для инструментов выбираем цвет, толщину и прозрачность.
-    // Для карандаша и маркера используем выбранный пользователем цвет,
-    // для ластика всегда белый.
-    let newColor = tool === 'eraser' ? 'white' : color;
-    let newWidth = width;
-    let newOpacity = 1;
-    if (tool === 'marker') newOpacity = 0.5;
-
-    // Начинаем новую линию
+    const newColor = tool === 'eraser' ? 'white' : color;
+    let newOpacity = (tool === 'marker') ? 0.5 : 1;
     setCurrentLine({
       path: `M${locationX},${locationY}`,
       color: newColor,
-      width: newWidth,
+      width,
       opacity: newOpacity,
       type: 'stroke',
     });
   };
 
-  // Обработчик перемещения пальца по холсту
   const handleTouchMove = (event) => {
     if (!currentLine || tool === 'fill') return;
     const { locationX, locationY } = event.nativeEvent;
-    setCurrentLine((prevLine) => ({
-      ...prevLine,
-      path: `${prevLine.path} L${locationX},${locationY}`,
+    setCurrentLine(prev => ({
+      ...prev,
+      path: `${prev.path} L${locationX},${locationY}`,
     }));
   };
 
-  // Обработчик завершения касания
   const handleTouchEnd = () => {
     if (currentLine && tool !== 'fill') {
-      setLines((prevLines) => [...prevLines, currentLine]);
+      setLines(prev => [...prev, currentLine]);
       setCurrentLine(null);
     }
   };
 
-  // Функция очистки холста
   const clearCanvas = () => {
     setLines([]);
   };
 
-  // Простейшая функция для проверки, находится ли точка (x, y) внутри пути.
-  // Работает корректно только для замкнутых областей, нарисованных одним штрихом.
-  const isPointInsidePath = (x, y, path) => {
-    const commands = path.split(' ').filter(Boolean);
-    let inside = false;
-
-    for (let i = 0; i < commands.length - 1; i++) {
-      const matchStart = commands[i].match(/([ML])([\d.]+),([\d.]+)/);
-      const matchEnd = commands[i + 1].match(/([ML])([\d.]+),([\d.]+)/);
-      if (!matchStart || !matchEnd) continue;
-
-      const startX = parseFloat(matchStart[2]);
-      const startY = parseFloat(matchStart[3]);
-      const endX = parseFloat(matchEnd[2]);
-      const endY = parseFloat(matchEnd[3]);
-
-      if (((startY > y) !== (endY > y)) &&
-          (x < ((endX - startX) * (y - startY)) / (endY - startY) + startX)) {
-        inside = !inside;
-      }
-    }
-
-    return inside;
-  };
-
-  // Функция заливки области
+  // Улучшенная функция заливки с учетом самопересечения
   const handleFill = (x, y) => {
-    let foundClosedArea = false;
-    // Перебираем все линии и проверяем, находится ли точка внутри нарисованного пути
-    lines.forEach((line) => {
-      // Для заливки обрабатываем только линии типа 'stroke'
-      if (line.type === 'stroke' && isPointInsidePath(x, y, line.path)) {
-        // Добавляем заливку: используем путь с закрытием (Z) и выбранный цвет
-        setLines((prevLines) => [
-          ...prevLines,
-          { type: 'fill', path: `${line.path} Z`, fill: color },
+    let found = false;
+    for (const line of lines) {
+      if (line.type !== 'stroke') continue;
+      const points = parsePathPoints(line.path);
+      const polyPoints = getClosedPolygonPoints(points);
+      if (!polyPoints) continue; // Не получилось получить замкнутый многоугольник
+      if (isPointInsidePolygon(x, y, polyPoints)) {
+        // Используем построенный многоугольник для создания пути заливки
+        const fillPath = pointsToPath(polyPoints);
+        setLines(prev => [
+          ...prev,
+          { type: 'fill', path: fillPath, fill: color },
         ]);
-        foundClosedArea = true;
+        found = true;
+        break;
       }
-    });
-
-    if (!foundClosedArea) {
-      Alert.alert('Ошибка', 'Точка находится вне замкнутой области.');
+    }
+    if (!found) {
+      Alert.alert('Ошибка', 'Нет замкнутой области для заливки или точка вне фигуры.');
     }
   };
 
-  // Обработчик выбора толщины из модального окна
   const handleWidthSelect = (selectedWidth) => {
     setWidth(selectedWidth);
     setWidthSelectionVisible(false);
   };
 
-  // Обработчик выбора цвета
-  const handleColorSelect = (selectedColor) => {
-    setColor(selectedColor);
-    setColorPickerVisible(false);
-  };
-
-  // Наборы толщин для разных инструментов
   const widthOptions = {
     pencil: [2, 5, 10],
     marker: [10, 20, 30],
     eraser: [10, 20, 30],
   };
-
-  // Набор предустановленных цветов
-  const colorOptions = ['black', 'red', 'blue', 'green', 'purple', 'orange'];
 
   return (
     <View style={styles.container}>
@@ -205,7 +260,6 @@ const App = () => {
         </G>
       </Svg>
 
-      {/* Панель инструментов */}
       <View style={styles.toolbar}>
         <TouchableOpacity
           style={[styles.toolButton, tool === 'pencil' && styles.activeTool]}
@@ -231,20 +285,15 @@ const App = () => {
         >
           <Text style={styles.toolButtonText}>Заливка</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={clearCanvas}
-        >
+        <TouchableOpacity style={styles.clearButton} onPress={clearCanvas}>
           <Text style={styles.clearButtonText}>×</Text>
         </TouchableOpacity>
-        {/* Кнопка выбора цвета (кружок) */}
-        <TouchableOpacity
-          style={[styles.colorPickerButton, { backgroundColor: color }]}
-          onPress={() => setColorPickerVisible(true)}
-        />
       </View>
 
-      {/* Модальное окно выбора толщины (не для инструмента fill) */}
+      <View style={styles.colorPickerContainer}>
+        <ColorPicker onColorSelected={setColor} />
+      </View>
+
       <Modal
         visible={widthSelectionVisible}
         transparent
@@ -271,39 +320,6 @@ const App = () => {
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setWidthSelectionVisible(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Отмена</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Модальное окно выбора цвета */}
-      <Modal
-        visible={colorPickerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setColorPickerVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Выберите цвет</Text>
-            <View style={styles.optionsRow}>
-              {colorOptions.map((c) => (
-                <TouchableOpacity
-                  key={c}
-                  style={[
-                    styles.colorOption,
-                    { backgroundColor: c },
-                    color === c && styles.selectedColorOption,
-                  ]}
-                  onPress={() => handleColorSelect(c)}
-                />
-              ))}
-            </View>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setColorPickerVisible(false)}
             >
               <Text style={styles.modalCloseButtonText}>Отмена</Text>
             </TouchableOpacity>
@@ -359,13 +375,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  colorPickerButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#000',
-    marginLeft: 10,
+  colorPickerContainer: {
+    marginTop: 20,
   },
   modalOverlay: {
     flex: 1,
@@ -406,18 +417,6 @@ const styles = StyleSheet.create({
   modalCloseButtonText: {
     color: 'blue',
     fontSize: 16,
-  },
-  colorOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    borderWidth: 1,
-    borderColor: '#000',
-  },
-  selectedColorOption: {
-    borderWidth: 3,
-    borderColor: '#555',
   },
 });
 
