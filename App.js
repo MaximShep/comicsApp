@@ -53,7 +53,6 @@ const segmentIntersection = (p1, p2, p3, p4) => {
   const t = tNumerator / denominator;
   const u = uNumerator / denominator;
   if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-    // пересечение найдено
     return {
       x: p1.x + t * r.x,
       y: p1.y + t * r.y,
@@ -63,16 +62,11 @@ const segmentIntersection = (p1, p2, p3, p4) => {
 };
 
 // Пытается найти первое самопересечение в массиве точек.
-// Возвращает объект { intersection, i, j }:
-// intersection – точка пересечения,
-// i – индекс отрезка (между points[i] и points[i+1]),
-// j – индекс другого отрезка (между points[j] и points[j+1]).
-// Если пересечение не найдено, возвращает null.
 const findSelfIntersection = (points) => {
   const n = points.length;
   for (let i = 0; i < n - 2; i++) {
     for (let j = i + 2; j < n - 1; j++) {
-      // Исключаем соседние отрезки (и случай, когда i==0 и j==n-1, что может совпадать с замыканием)
+      // Исключаем соседние отрезки и случай, когда i==0 и j==n-1
       if (i === 0 && j === n - 1) continue;
       const inter = segmentIntersection(points[i], points[i + 1], points[j], points[j + 1]);
       if (inter) {
@@ -83,8 +77,9 @@ const findSelfIntersection = (points) => {
   return null;
 };
 
-// Проверяет, замкнут ли путь: либо расстояние между первым и последним пунктом меньше порога,
-// либо линия имеет самопересечение, позволяющее построить замкнутый многоугольник.
+// Определяет замкнутый многоугольник для заливки.
+// Если расстояние между первой и последней точкой меньше порога – возвращает весь массив точек.
+// Если нет, пытается найти самопересечение и построить замкнутый полигон.
 const getClosedPolygonPoints = (points, threshold = 10) => {
   if (points.length < 3) return null;
   const first = points[0];
@@ -92,12 +87,9 @@ const getClosedPolygonPoints = (points, threshold = 10) => {
   if (Math.hypot(last.x - first.x, last.y - first.y) <= threshold) {
     return points;
   }
-  // Если начало и конец не совпадают, попробуем найти самопересечение
   const interData = findSelfIntersection(points);
   if (interData) {
     const { intersection, i, j } = interData;
-    // Построим многоугольник, начиная с точки пересечения, затем берем точки от i+1 до j,
-    // и замыкаем многоугольник добавлением точки пересечения.
     const poly = [intersection, ...points.slice(i + 1, j + 1), intersection];
     return poly;
   }
@@ -187,9 +179,8 @@ const App = () => {
       if (line.type !== 'stroke') continue;
       const points = parsePathPoints(line.path);
       const polyPoints = getClosedPolygonPoints(points);
-      if (!polyPoints) continue; // Не получилось получить замкнутый многоугольник
+      if (!polyPoints) continue;
       if (isPointInsidePolygon(x, y, polyPoints)) {
-        // Используем построенный многоугольник для создания пути заливки
         const fillPath = pointsToPath(polyPoints);
         setLines(prev => [
           ...prev,
@@ -202,6 +193,36 @@ const App = () => {
     if (!found) {
       Alert.alert('Ошибка', 'Нет замкнутой области для заливки или точка вне фигуры.');
     }
+  };
+
+  // Функция экспорта SVG в формате JSON
+  const handleExport = () => {
+    const exportData = {
+      svg: {
+        xmlns: "http://www.w3.org/2000/svg",
+        width: 500,
+        height: 500,
+        paths: lines.map(line => {
+          if (line.type === 'fill') {
+            return {
+              d: line.path,
+              fill: line.fill,
+              stroke: "none"
+            };
+          }
+          return {
+            d: line.path,
+            stroke: line.color,
+            strokeWidth: line.width,
+            strokeLinecap: "round",
+            fill: "none",
+            strokeOpacity: line.opacity
+          };
+        }),
+      }
+    };
+    console.log(JSON.stringify(exportData, null, 2));
+    Alert.alert('Экспорт', 'SVG в формате JSON выведен в консоль');
   };
 
   const handleWidthSelect = (selectedWidth) => {
@@ -260,6 +281,7 @@ const App = () => {
         </G>
       </Svg>
 
+      {/* Панель инструментов вверху */}
       <View style={styles.toolbar}>
         <TouchableOpacity
           style={[styles.toolButton, tool === 'pencil' && styles.activeTool]}
@@ -290,10 +312,12 @@ const App = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Компонент выбора цвета */}
       <View style={styles.colorPickerContainer}>
         <ColorPicker onColorSelected={setColor} />
       </View>
 
+      {/* Модальное окно выбора толщины */}
       <Modal
         visible={widthSelectionVisible}
         transparent
@@ -326,6 +350,13 @@ const App = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Кнопка экспорта перемещена вниз */}
+      <View style={styles.exportContainer}>
+        <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
+          <Text style={styles.exportButtonText}>Вывести</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -377,6 +408,19 @@ const styles = StyleSheet.create({
   },
   colorPickerContainer: {
     marginTop: 20,
+  },
+  exportContainer: {
+    marginTop: 20,
+    marginBottom: 30,
+  },
+  exportButton: {
+    padding: 10,
+    backgroundColor: '#4CAF50',
+    borderRadius: 5,
+  },
+  exportButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
