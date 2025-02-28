@@ -29,7 +29,8 @@ const Menu = ({navigation}) =>{
           dateOfCreation: '23.02.2025',
         },
       ];
-    
+      console.log(comics)
+    if (comics.length!=0){
     return(
         <View style={styles.container}>
             <TouchableOpacity style={styles.addButton} onPress={()=>{{
@@ -70,6 +71,21 @@ const Menu = ({navigation}) =>{
         </View>
     )
 }
+else{
+    return(
+        <View style={styles.container}>
+            <TouchableOpacity style={styles.addButton} onPress={()=>{{
+                navigation.navigate("Рисовалки")
+            }}}
+            >
+                <Image source={require('../../assets/images/addButton.png')} style={{height:heightPercentageToDP(7),
+        width:heightPercentageToDP(7),}}/>
+            </TouchableOpacity>
+        <Image source={require('../../assets/images/nothing.png')} style={styles.nothing}/>
+        </View>
+    )
+}
+}
 const styles = StyleSheet.create({
     container:{
         backgroundColor:'#fff',
@@ -88,6 +104,12 @@ const styles = StyleSheet.create({
         height: 1,
         width: "10%"
       },
+    nothing:{
+        alignSelf:'center',
+        width:widthPercentageToDP(50),
+        height:heightPercentageToDP(10),
+        marginTop:heightPercentageToDP(37)
+    }
 })
 
 export default Menu;

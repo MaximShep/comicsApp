@@ -96,7 +96,7 @@ function BottomTab_Navigator() {
       >
         
             <bottomTab.Screen options={{headerShown: false}}name="Главная" component={Main_StackNavigator} />
-            <bottomTab.Screen options={{headerShown: false}}name="Комиксы" component={Gallery} />
+            <bottomTab.Screen name="Комиксы" component={Gallery} />
             <bottomTab.Screen name="Профиль" component={Profile} />
       </bottomTab.Navigator>
   );

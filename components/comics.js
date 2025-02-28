@@ -20,7 +20,7 @@ export default function ComicsItem(props){
                     <Text style={styles.name}>{name}</Text>
                     {/* <Text styles={styles.date}>изменено: {date_of_creation}</Text> */}
                 {/* </View> */}
-                <TouchableOpacity>
+                <TouchableOpacity onPress={()=>{navigate("Рисовалки")}}>
                     <Image source={require('../assets/images/other.png')} style={styles.other}/>
                 </TouchableOpacity>
             </View>
