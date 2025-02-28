@@ -21,6 +21,14 @@ function Main_StackNavigator(){
     </stack.Navigator>
   )
 }
+function Gallary(){
+  return(
+    <stack.Navigator options={{headerShown: false}}>
+    <stack.Screen name="Галерея" options={{headerShown: false}} component={Gallery} />
+    <stack.Screen name="Просмотр" options={{headerShown: false}} component={ViewScreen} />
+  </stack.Navigator>
+)
+}
 
 // function AfterLogin(){
 //     return (
@@ -98,7 +106,7 @@ function BottomTab_Navigator() {
       >
         
             <bottomTab.Screen options={{headerShown: false}}name="Главная" component={Main_StackNavigator} />
-            <bottomTab.Screen name="Комиксы" component={Gallery} />
+            <bottomTab.Screen name="Комиксы" component={Gallary} />
             <bottomTab.Screen name="Профиль" component={Profile} />
       </bottomTab.Navigator>
   );

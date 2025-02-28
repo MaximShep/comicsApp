@@ -13,7 +13,7 @@ export default function Demonstration(props){
     } = props
     console.log(user_name)
     return(
-        <TouchableOpacity style={styles.controller}>
+        <TouchableOpacity style={styles.controller}  onPress={()=>{navigate("Просмотр")}}>
             <Image source={require('../assets/images/cover.png')} style={styles.image}/>
             <View style={styles.container}>
                     <Text style={styles.name}>{name}</Text>
