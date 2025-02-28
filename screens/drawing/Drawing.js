@@ -17,6 +17,8 @@ import MarkerIcon from '../../assets/images/marker.js'
 import EaserIcon from '../../assets/images/easer.js'
 import FillIcon from '../../assets/images/fill.js'
 import TextIcon from '../../assets/images/text.js'
+import { useScrollToTop, useTheme } from '@react-navigation/native';
+import { Buffer } from 'buffer';
 
 
 // Преобразует строку пути в массив точек: [{x, y}, ...]
@@ -122,7 +124,6 @@ const isPointInsidePolygon = (x, y, polyPoints) => {
 const Drawing = ({navigation}) => {
   /////// for server
   const comicsName = 'Без названия'
-  const page = 10
   const pageCount = 10
   const newPage = page/10
   // if ()
@@ -152,6 +153,52 @@ const Drawing = ({navigation}) => {
   const [history, setHistory] = useState([]); // история изменений (максимум 10)
   const [redoStack, setRedoStack] = useState([]);
 
+  const [pages, setPages] = useState(Array(pageCount).fill([]));
+  const [currentPage, setCurrentPage] = useState(0);
+  const [page, setPage] = useState(1);  
+
+  const saveCurrentPage = () => {
+    setPages(prevPages => {
+      const newPages = [...prevPages];
+      newPages[currentPage] = lines;
+      return newPages;
+    });
+  };
+
+  const loadPage = (pageIndex) => {
+    const pageData = pages[pageIndex];
+    setLines(pageData && pageData.length ? pageData : []);
+  };
+
+  const convertSvgArrayToBase64 = (svgArray) => {
+    return svgArray.map(svgItem => {
+      const svgString = JSON.stringify(svgItem);
+      const base64String = Buffer.from(svgString).toString('base64');
+      console.log(base64String)
+      return base64String;
+    });
+  };
+
+  const handleUndoPress = () => {
+    if (currentPage > 0) {
+      saveCurrentPage();
+      const newIndex = currentPage - 1;
+      setPage(newIndex);
+      setCurrentPage(newIndex);
+      loadPage(newIndex);
+    }
+  };
+  
+  const handleRedoPress = () => {
+    if (currentPage < pageCount - 1) {
+      saveCurrentPage();
+      const newIndex = currentPage + 1;
+      setPage(newIndex);
+      setCurrentPage(newIndex);
+      loadPage(newIndex);
+      console.log(pages)
+    }
+  };
 
   const switchTool = (selectedTool) => {
     if (selectedTool !== 'fill' && tool === selectedTool) {
@@ -339,10 +386,10 @@ const handleRedo = () => {
         <TouchableOpacity style={styles.cleanButton} onPress={clearCanvas}>
           <Image source={require('../../assets/images/clean.png')} style={styles.clean}/>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttons}>
+        <TouchableOpacity style={styles.buttons} onPress={handleRedoPress}>
         <Image source={require('../../assets/images/plus.png')} style={styles.plus}/>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttons}>
+        <TouchableOpacity style={styles.buttons} onPress={console.log(convertSvgArrayToBase64(pages))}>
         <Image source={require('../../assets/images/layers.png')} style={styles.layers}/>
         </TouchableOpacity>
       </View>
