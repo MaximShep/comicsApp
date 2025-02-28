@@ -5,12 +5,12 @@ class ComicsController {
 
     async createComics(req, res) {
 
-        const { user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id } = req.body
+        const { name, user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id } = req.body
         const sql = (
             
-            `insert into comics ( user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );`
+            `insert into comics ( name, user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? );`
         )
-        db.all(sql, [user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id], (err, rows) => {
+        db.all(sql, [name, user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id], (err, rows) => {
                 if (err) return res.json(err)
                 else return res.json(rows)
             })
@@ -53,9 +53,10 @@ class ComicsController {
     }
 
     async updateComics(req, res) {
-        const { id, user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id  } = req.body
+        const { id, name, user_id, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id  } = req.body
         const sql = (
-            `UPDATE images 
+            `UPDATE images
+                        SET name = ?, 
                         SET img1_id = ?,
                         SET img2_id = ?, 
                         SET img3_id = ?, 
@@ -68,7 +69,7 @@ class ComicsController {
                         SET img10_id = ?
                         WHERE id = ? AND user_id = ?`
         )
-        db.all(sql, [img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id, id, user_id  ], (err, rows) => {
+        db.all(sql, [name, img1_id, img2_id, img3_id, img4_id, img5_id, img6_id, img7_id, img8_id, img9_id, img10_id, id, user_id  ], (err, rows) => {
             if (err) return res.json(err)
             else return res.json(rows)
         })
