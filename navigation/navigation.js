@@ -4,6 +4,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import Drawing from '../screens/drawing/Drawing';
 import Menu from '../screens/drawing/menu';
 import Profile from '../screens/profile/Profile';
+import Gallery from '../screens/gallery/gallery';
 import { Ionicons } from "@expo/vector-icons";
 
 
@@ -95,7 +96,7 @@ function BottomTab_Navigator() {
       >
         
             <bottomTab.Screen options={{headerShown: false}}name="Главная" component={Main_StackNavigator} />
-            <bottomTab.Screen options={{headerShown: false}}name="Комиксы" component={Menu} />
+            <bottomTab.Screen options={{headerShown: false}}name="Комиксы" component={Gallery} />
             <bottomTab.Screen name="Профиль" component={Profile} />
       </bottomTab.Navigator>
   );

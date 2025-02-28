@@ -4,25 +4,20 @@ import { heightPercentageToDP, widthPercentageToDP } from "react-native-responsi
 
 const width = widthPercentageToDP(48)
 
-export default function ComicsItem(props){
+export default function Demonstration(props){
     const {navigate} = useNavigation()
     const{
         image,
         name,
-        date_of_creation
+        user_name
     } = props
-    console.log(date_of_creation)
+    console.log(user_name)
     return(
         <TouchableOpacity style={styles.controller}>
             <Image source={require('../assets/images/cover.png')} style={styles.image}/>
             <View style={styles.container}>
-                {/* <View> */}
                     <Text style={styles.name}>{name}</Text>
-                    {/* <Text styles={styles.date}>изменено: {date_of_creation}</Text> */}
-                {/* </View> */}
-                <TouchableOpacity>
-                    <Image source={require('../assets/images/other.png')} style={styles.other}/>
-                </TouchableOpacity>
+                    <Text styles={styles.ale}>{user_name}</Text>
             </View>
         </TouchableOpacity>
     )
@@ -39,9 +34,10 @@ const styles = StyleSheet.create({
         width:widthPercentageToDP(48),
     },
     container:{
-        flexDirection:'row',
         alignItems:'center',
-        height:heightPercentageToDP(5)
+        height:heightPercentageToDP(5),
+        justifyContent:'center',
+        width:widthPercentageToDP(48)
     },
     other:{
         width:widthPercentageToDP(6),
@@ -50,8 +46,10 @@ const styles = StyleSheet.create({
     },
     name:{
         fontFamily:'font',
-        marginLeft:widthPercentageToDP(3),
         fontSize:widthPercentageToDP(3.8),
-        width:widthPercentageToDP(30)
+    },
+    ale:{
+        fontFamily:'font',
+        fontSize:widthPercentageToDP(2.8),
     }
 })
