@@ -1,0 +1,1 @@
+export const ip_address = 'http://127.0.0.1/api'

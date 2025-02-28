@@ -8,8 +8,8 @@ import {
   Modal,
 } from 'react-native';
 import Svg, { Path, G } from 'react-native-svg';
-import ColorPicker from '../src/colorPicker.js';
-import { getAllImage, saveImage } from '../database';
+import ColorPicker from '../../src/colorPicker.js';
+import { getAllImage, saveImage } from '../../database.js';
 
 // Функция для разбора строки пути в массив точек
 const parsePathPoints = (path) => {
