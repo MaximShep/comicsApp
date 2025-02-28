@@ -516,7 +516,7 @@ const styles = StyleSheet.create({
     width:'100%',
     alignItems:'center',
     justifyContent:'center',
-    height:heightPercentageToDP(75)
+    height:heightPercentageToDP(70)
   },
   clearButton: {
     backgroundColor: 'red',

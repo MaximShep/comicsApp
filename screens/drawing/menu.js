@@ -19,7 +19,6 @@ const Menu = ({navigation}) =>{
             >
                 <Image source={require('../../assets/images/addButton.png')} style={styles.addButton}/>
             </TouchableOpacity>
-            <FlatList/>
 
         </View>
     )
@@ -34,8 +33,9 @@ const styles = StyleSheet.create({
         height:heightPercentageToDP(7),
         width:heightPercentageToDP(7),
         position:'absolute',
-        marginTop:heightPercentageToDP(80),
-        alignSelf:'center'      
+        marginTop:heightPercentageToDP(77),
+        alignSelf:'center',
+        zIndex:1
     }
 })
 
