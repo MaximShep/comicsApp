@@ -5,7 +5,7 @@ export default function Profile() {
   const user = {
     name:  global.name,
     email: global.login,
-    avatar: "https://randomuser.me/api/portraits/men/10.jpg",
+    avatar: "",
     rating: 4.8,
     recipesCount: 3,
   };

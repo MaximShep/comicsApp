@@ -14,7 +14,7 @@ const Menu = ({navigation}) =>{
             <TouchableOpacity onPress={()=>{{
                 navigation.navigate("Рисовалки")
             }}}>
-                <Image source={require('../assets/icon.png')}/>
+                {/* <Image source={require('../assets/icon.png')}/> */}
             </TouchableOpacity>
         </View>
     )

@@ -1,7 +1,11 @@
 import {NavigationContainer} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Drawing from '../screens/Drawing';
-import Menu from '../screens/menu';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
+import Drawing from '../screens/drawing/Drawing';
+import Menu from '../screens/drawing/menu';
+import Profile from '../screens/profile/Profile';
+import { Ionicons } from "@expo/vector-icons";
+
 
 const stack = createNativeStackNavigator()
 const bottomTab = createBottomTabNavigator();
@@ -87,8 +91,8 @@ function BottomTab_Navigator() {
         })}
       >
         
-            <bottomTab.Screen name="Создать" component={MainStack} />
-            <bottomTab.Screen name="Комиксы" component={CustomRecipeStack} />
+            <bottomTab.Screen name="Создать" component={Drawing} />
+            <bottomTab.Screen name="Комиксы" component={Menu} />
             <bottomTab.Screen name="Профиль" component={Profile} />
       </bottomTab.Navigator>
   );
