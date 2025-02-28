@@ -17,8 +17,6 @@ export default function Profile() {
       <Text style={styles.email}>{user.email}</Text>
 
       <View style={styles.statsContainer}>
-        <Text style={styles.statsText}>⭐ {user.rating.toFixed(1)}</Text>
-        <Text style={styles.statsText}>📖 {user.recipesCount} рецепта</Text>
       </View>
 
       <TouchableOpacity style={styles.button}>

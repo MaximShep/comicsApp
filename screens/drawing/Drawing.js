@@ -6,7 +6,8 @@ import {
   Text,
   Alert,
   Modal,
-  Image
+  Image,
+  SafeAreaView
 } from 'react-native';
 import { widthPercentageToDP, heightPercentageToDP } from 'react-native-responsive-screen';
 import Svg, { Path, G } from 'react-native-svg';
@@ -147,6 +148,9 @@ const Drawing = ({navigation}) => {
   const [easerColor, setEaserColor] = useState('#1f1f1f')
   const [fillColor, setFillColor] = useState('#1f1f1f')
   const [textColor, setTextColor] = useState('#1f1f1f')
+  // Добавляем новые состояния для истории и redo-стека
+  const [history, setHistory] = useState([]); // история изменений (максимум 10)
+  const [redoStack, setRedoStack] = useState([]);
 
 
   const switchTool = (selectedTool) => {
@@ -192,12 +196,51 @@ const Drawing = ({navigation}) => {
     }));
   };
 
-  const handleTouchEnd = () => {
-    if (currentLine && tool !== 'fill') {
-      setLines(prev => [...prev, currentLine]);
-      setCurrentLine(null);
-    }
-  };
+  // Обновляем handleTouchEnd, чтобы сохранять состояние в history
+const handleTouchEnd = () => {
+  if (currentLine && tool !== 'fill') {
+    const newLines = [...lines, currentLine];
+    setLines(newLines);
+    // Сохраняем снимок состояния в history, ограничивая размер 10
+    setHistory(prev => {
+      const updated = [...prev, newLines];
+      if (updated.length > 10) {
+        updated.shift(); // удаляем самый ранний снимок
+      }
+      return updated;
+    });
+    setCurrentLine(null);
+    // При новом действии очищаем redo-стек
+    setRedoStack([]);
+  }
+};
+// Функция Undo: возвращаемся к предыдущему состоянию
+const handleUndo = () => {
+  if (history.length > 0) {
+    // Сохраняем текущее состояние в redo-стек
+    setRedoStack(prev => [...prev, lines]);
+    // Извлекаем последнее состояние из history и устанавливаем его как текущее
+    setHistory(prev => {
+      const updated = [...prev];
+      const lastState = updated.pop();
+      setLines(lastState);
+      return updated;
+    });
+  }
+};
+const handleRedo = () => {
+  if (redoStack.length > 0) {
+    // Сохраняем текущее состояние в history
+    setHistory(prev => [...prev, lines]);
+    // Извлекаем последнее состояние из redoStack и устанавливаем его как текущее
+    setRedoStack(prev => {
+      const updated = [...prev];
+      const lastState = updated.pop();
+      setLines(lastState);
+      return updated;
+    });
+  }
+};
 
   const clearCanvas = () => {
     setLines([]);
@@ -268,7 +311,7 @@ const Drawing = ({navigation}) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={()=>{
           navigation.goBack()
@@ -276,10 +319,10 @@ const Drawing = ({navigation}) => {
           <Image source={require('../../assets/images/back.png')} style={styles.goBack}/>
         </TouchableOpacity>
         <View style={styles.arrows}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleUndo}>
             <Image source={require('../../assets/images/undo.png')} style={styles.arrow}/>
           </TouchableOpacity>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={handleRedo}>
             <Image source={require('../../assets/images/redo.png')} style={styles.arrow}/>
           </TouchableOpacity>
         </View>
@@ -481,7 +524,7 @@ const Drawing = ({navigation}) => {
           <Text style={styles.exportButtonText}>Вывести</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
