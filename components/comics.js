@@ -13,7 +13,7 @@ export default function ComicsItem(props){
     } = props
     console.log(date_of_creation)
     return(
-        <TouchableOpacity style={styles.controller}>
+        <TouchableOpacity style={styles.controller} onPress={()=>{navigate("Просмотр")}}>
             <Image source={require('../assets/images/cover.png')} style={styles.image}/>
             <View style={styles.container}>
                 {/* <View> */}

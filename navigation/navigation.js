@@ -4,6 +4,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs'
 import Drawing from '../screens/drawing/Drawing';
 import Menu from '../screens/drawing/menu';
 import Profile from '../screens/profile/Profile';
+import ViewScreen from '../screens/gallery/viewScreen';
 import Gallery from '../screens/gallery/gallery';
 import { Ionicons } from "@expo/vector-icons";
 
@@ -16,6 +17,7 @@ function Main_StackNavigator(){
       <stack.Navigator options={{headerShown: false}}>
       <stack.Screen name="Галерея" options={{headerShown: false}} component={Menu} />
       <stack.Screen name="Рисовалки" options={{headerShown: false}} component={Drawing} />
+      <stack.Screen name="Просмотр" options={{headerShown: false}} component={ViewScreen} />
     </stack.Navigator>
   )
 }
