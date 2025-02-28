@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { View, PanResponder, StyleSheet } from 'react-native';
+import { View, PanResponder, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { heightPercentageToDP, widthPercentageToDP } from 'react-native-responsive-screen';
 
-const ColorPicker = ({ onColorSelected }) => {
-  const [selectedColor, setSelectedColor] = useState('#ff0000');
-  
+const ColorPicker = ({ onColorSelected }) => {  
   const handleColorChange = (x, width) => {
     const ratio = x / width;
     const hue = Math.round(ratio * 360);
     const color = `hsl(${hue}, 100%, 50%)`;
-    setSelectedColor(color);
     onColorSelected(color);
   };
 
@@ -25,6 +23,9 @@ const ColorPicker = ({ onColorSelected }) => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={[styles.selectedColor]} onPress={()=>{
+        onColorSelected('#000')
+      }}/>
       <LinearGradient
         colors={['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff', '#ff0000']}
         start={[0, 0.5]}
@@ -32,7 +33,6 @@ const ColorPicker = ({ onColorSelected }) => {
         style={styles.gradient}
         {...panResponder.panHandlers}
       />
-      <View style={[styles.selectedColor, { backgroundColor: selectedColor }]} />
     </View>
   );
 };
@@ -40,21 +40,22 @@ const ColorPicker = ({ onColorSelected }) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: 10,
+    justifyContent:'center',
+    flexDirection:'row'    
   },
   gradient: {
-    width: 300,
-    height: 40,
+    width: widthPercentageToDP(70),
+    height: widthPercentageToDP(9),
     borderRadius: 20,
+    marginLeft:widthPercentageToDP(3)
   },
   selectedColor: {
-    width: 40,
-    height: 40,
+    width: widthPercentageToDP(9),
+    height: widthPercentageToDP(9),
     borderRadius: 20,
-    marginTop: 10,
     borderWidth: 2,
-    borderColor: '#000',
-  },
+    backgroundColor:'#000'
+  }
 });
 
 export default ColorPicker;
