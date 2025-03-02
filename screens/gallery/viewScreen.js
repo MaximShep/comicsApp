@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,6 +14,12 @@ import { widthPercentageToDP, heightPercentageToDP } from 'react-native-responsi
 import Svg, { Path, G } from 'react-native-svg';
 import { Buffer } from 'buffer';
 
+
+
+const base64ToSvg = (base64String) => {
+  const svgString = Buffer.from(base64String, 'base64').toString('utf-8');
+  return JSON.parse(svgString); // или другой способ преобразования, в зависимости от структуры SVG
+};
 const ViewScreen = ({navigation}) => {
   /////// for server
   const comicsName = 'Без названия'
@@ -28,29 +34,26 @@ const ViewScreen = ({navigation}) => {
   };
   const name=truncateText(comicsName)
 
+
   const [pageCheck, setPageCheck] = useState(false)
   const [lines, setLines] = useState([]);
-  const [currentLine, setCurrentLine] = useState(null);
-  const [tool, setTool] = useState('pencil'); // 'pencil', 'marker', 'eraser', 'fill'
-  const [color, setColor] = useState('black');
-  const [width, setWidth] = useState(5);
-  const [widthSelectionVisible, setWidthSelectionVisible] = useState(false);
+    const [currentLine, setCurrentLine] = useState(null);
   const [page, setPage] = useState(1);
-  // Добавляем новые состояния для истории и redo-стека
-  const [history, setHistory] = useState([]); // история изменений (максимум 10)
-  const [redoStack, setRedoStack] = useState([]);
-  const [pages, setPages] = useState(Array(pageCount).fill([]));
-  const [currentPage, setCurrentPage] = useState(0);
-  
-  const base64ToSvg = (base64String) => {
-    const svgString = Buffer.from(base64String, 'base64').toString('utf-8');
-    return JSON.parse(svgString); // или другой способ преобразования, в зависимости от структуры SVG
-  };
-  
-  console.log(global.base64Array);
-  const svgArray = global.base64Array.map(base64ToSvg);
-  setPages(svgArray);
-  
+  const [pages, setPages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(()=>{
+    console.log("From base64:")
+    console.log(global.base64Array);
+    console.log("to svg")
+    console.log(global.base64Array.map(base64ToSvg));
+    const svgArray = global.base64Array.map(base64ToSvg);
+    setPages(svgArray);
+    console.log(pages)
+    
+    setPage(1);
+    loadPage(1);
+  }, [])
 
   const saveCurrentPage = () => {
     setPages(prevPages => {
@@ -61,13 +64,13 @@ const ViewScreen = ({navigation}) => {
   };
 
   const loadPage = (pageIndex) => {
-    const pageData = pages[pageIndex];
+    const pageData = pages[pageIndex-1];
     setLines(pageData && pageData.length ? pageData : []);
+    setCurrentLine(pages[pageIndex-1]);
   };
 
   const handleUndoPress = () => {
     if (currentPage > 1) {
-      saveCurrentPage();
       const newIndex = currentPage - 1;
       setPage(newIndex);
       setCurrentPage(newIndex);
@@ -77,7 +80,6 @@ const ViewScreen = ({navigation}) => {
   
   const handleRedoPress = () => {
     if (currentPage < pageCount) {
-      saveCurrentPage();
       const newIndex = currentPage + 1;
       setPage(newIndex);
       setCurrentPage(newIndex);
@@ -85,163 +87,6 @@ const ViewScreen = ({navigation}) => {
     }
   };
   
-
-  const switchTool = (selectedTool) => {
-    if (selectedTool !== 'fill' && tool === selectedTool) {
-      setWidthSelectionVisible(true);
-    } else {
-      setTool(selectedTool);
-      if (selectedTool === 'pencil') setWidth(5);
-      if (selectedTool === 'marker') setWidth(20);
-      if (selectedTool === 'eraser') setWidth(20);
-    }
-  };
-
-  const switchToPencil = () => switchTool('pencil');
-  const switchToMarker = () => switchTool('marker');
-  const switchToEraser = () => switchTool('eraser');
-  const switchToFill = () => setTool('fill');
-
-
-  const handleTouchStart = (event) => {
-    const { locationX, locationY } = event.nativeEvent;
-    if (tool === 'fill') {
-      handleFill(locationX, locationY);
-      return;
-    }
-    const newColor = tool === 'eraser' ? 'white' : color;
-    let newOpacity = (tool === 'marker') ? 0.5 : 1;
-    setCurrentLine({
-      path: `M${locationX},${locationY}`,
-      color: newColor,
-      width,
-      opacity: newOpacity,
-      type: 'stroke',
-    });
-  };
-
-  const handleTouchMove = (event) => {
-    if (!currentLine || tool === 'fill') return;
-    const { locationX, locationY } = event.nativeEvent;
-    setCurrentLine(prev => ({
-      ...prev,
-      path: `${prev.path} L${locationX},${locationY}`,
-    }));
-  };
-
-  // Обновляем handleTouchEnd, чтобы сохранять состояние в history
-const handleTouchEnd = () => {
-  if (currentLine && tool !== 'fill') {
-    const newLines = [...lines, currentLine];
-    setLines(newLines);
-    // Сохраняем снимок состояния в history, ограничивая размер 10
-    setHistory(prev => {
-      const updated = [...prev, newLines];
-      if (updated.length > 10) {
-        updated.shift(); // удаляем самый ранний снимок
-      }
-      return updated;
-    });
-    setCurrentLine(null);
-    // При новом действии очищаем redo-стек
-    setRedoStack([]);
-  }
-};
-// Функция Undo: возвращаемся к предыдущему состоянию
-const handleUndo = () => {
-  if (history.length > 0) {
-    // Сохраняем текущее состояние в redo-стек
-    setRedoStack(prev => [...prev, lines]);
-    // Извлекаем последнее состояние из history и устанавливаем его как текущее
-    setHistory(prev => {
-      const updated = [...prev];
-      const lastState = updated.pop();
-      setLines(lastState);
-      return updated;
-    });
-  }
-};
-const handleRedo = () => {
-  if (redoStack.length > 0) {
-    // Сохраняем текущее состояние в history
-    setHistory(prev => [...prev, lines]);
-    // Извлекаем последнее состояние из redoStack и устанавливаем его как текущее
-    setRedoStack(prev => {
-      const updated = [...prev];
-      const lastState = updated.pop();
-      setLines(lastState);
-      return updated;
-    });
-  }
-};
-
-  const clearCanvas = () => {
-    setLines([]);
-  };
-
-  // Улучшенная функция заливки с учетом самопересечения
-  const handleFill = (x, y) => {
-    let found = false;
-    for (const line of lines) {
-      if (line.type !== 'stroke') continue;
-      const points = parsePathPoints(line.path);
-      const polyPoints = getClosedPolygonPoints(points);
-      if (!polyPoints) continue;
-      if (isPointInsidePolygon(x, y, polyPoints)) {
-        const fillPath = pointsToPath(polyPoints);
-        setLines(prev => [
-          ...prev,
-          { type: 'fill', path: fillPath, fill: color },
-        ]);
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      Alert.alert('Ошибка', 'Нет замкнутой области для заливки или точка вне фигуры.');
-    }
-  };
-
-  // Функция экспорта SVG в формате JSON
-  const handleExport = () => {
-    const exportData = {
-      svg: {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: 500,
-        height: 500,
-        paths: lines.map(line => {
-          if (line.type === 'fill') {
-            return {
-              d: line.path,
-              fill: line.fill,
-              stroke: "none"
-            };
-          }
-          return {
-            d: line.path,
-            stroke: line.color,
-            strokeWidth: line.width,
-            strokeLinecap: "round",
-            fill: "none",
-            strokeOpacity: line.opacity
-          };
-        }),
-      }
-    };
-    console.log(JSON.stringify(exportData, null, 2));
-    Alert.alert('Экспорт', 'SVG в формате JSON выведен в консоль');
-  };
-
-  const handleWidthSelect = (selectedWidth) => {
-    setWidth(selectedWidth);
-    setWidthSelectionVisible(false);
-  };
-
-  const widthOptions = {
-    pencil: [2, 5, 10],
-    marker: [10, 20, 30],
-    eraser: [10, 20, 30],
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -263,10 +108,34 @@ const handleRedo = () => {
         </View>
       </View>
       <View style={styles.canvasContainer}>
-        <View style={styles.svgBack}/>
-        <Image style={styles.canvas}/>
-      </View>
-    
+          <Svg style={styles.canvas}>
+            <G>
+              {lines.map((line, index) => {
+                if (line.type === 'fill') {
+                  return (
+                    <Path
+                      key={index}
+                      d={line.path}
+                      fill={line.fill}
+                      stroke="none"
+                    />
+                  );
+                }
+                return (
+                  <Path
+                    key={index}
+                    d={line.path}
+                    stroke={line.color}
+                    strokeWidth={line.width}
+                    strokeLinecap="round"
+                    fill="none"
+                    strokeOpacity={line.opacity}
+                  />
+                );
+              })}
+            </G>
+          </Svg>
+          </View>
 
 
      
@@ -297,7 +166,8 @@ const styles = StyleSheet.create({
     height:heightPercentageToDP(5.5),
     alignItems:'center',
     width:widthPercentageToDP(93),
-    flexDirection:'row'
+    flexDirection:'row',
+    marginTop:heightPercentageToDP(4)
   },
   canvas: {
     width:widthPercentageToDP(93),

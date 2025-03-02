@@ -6,6 +6,7 @@ import {
   Text,
   Alert,
   Modal,
+  TextInput,
   Image,
   SafeAreaView
 } from 'react-native';
@@ -157,6 +158,43 @@ const Drawing = ({navigation}) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [page, setPage] = useState(1);  
 
+
+
+
+
+  const [comicName, setComicName] = useState('');
+  const [isSaveButtonEnabled, setIsSaveButtonEnabled] = useState(false);
+  const [isModalNameVision, setIsModalNameVision] = useState(false);
+
+  const handleComicNameChangeVisible = (text) => {
+    setIsModalNameVision(true);
+  };
+  // Обработчик изменения текста в поле ввода
+  const handleComicNameChange = (text) => {
+    setComicName(text);
+    setIsSaveButtonEnabled(text.trim() !== ''); // Активируем кнопку "Готово", если поле не пустое
+  };
+
+  // Обработчик нажатия на кнопку "Готово"
+  const handleSavePress = () => {
+    if (comicName.trim() === '') {
+      Alert.alert('Ошибка', 'Введите название комикса');
+      return;
+    }
+    convertSvgArrayToBase64();
+    setIsModalNameVision(false);
+  };
+
+  const onClose = () => {
+    setIsModalNameVision(false);
+  };
+
+
+
+
+
+
+
   const saveCurrentPage = () => {
     setPages(prevPages => {
       const newPages = [...prevPages];
@@ -169,14 +207,33 @@ const Drawing = ({navigation}) => {
     const pageData = pages[pageIndex];
     setLines(pageData && pageData.length ? pageData : []);
   };
-  const convertSvgArrayToBase64 = (svgArray) => {
-    const base64Array = svgArray.map(svgItem => {
-      const svgString = JSON.stringify(svgItem);
-      const base64String = Buffer.from(svgString).toString('base64');
-      return base64String;
-    });
+  const convertSvgArrayToBase64 = () => {
+    saveCurrentPage()
+    const base64Array = pages.map(svgItem => {
+    const svgString = JSON.stringify(svgItem);
+    const base64String = Buffer.from(svgString).toString('base64');
+    return base64String;
+  });
+
     // Сохраняем весь массив, а не отдельное значение
+    // console.log(pages)
     global.base64Array = base64Array;
+    global.name = comicName;
+    
+    const newComic = {
+      image: '../assets/images/cover.png', // Путь к локальному изображению
+      name: comicName, // Название комикса
+      dateOfCreation: new Date().toLocaleDateString(), // Текущая дата
+      comicsBase64: base64Array, // SVG страницы в Base64
+    };
+
+    // Добавляем новый комикс в global.comics
+    if (global.comics) {
+      global.comics.push(newComic); // Добавляем новый комикс
+    } else {
+      global.comics = [newComic]; // Если global.comics не существует, создаем новый массив
+    }
+    console.log(global.comics)
     return base64Array;
   };
   
@@ -185,20 +242,21 @@ const Drawing = ({navigation}) => {
     if (currentPage > 0) {
       saveCurrentPage();
       const newIndex = currentPage - 1;
-      setPage(newIndex);
+      setPage(newIndex+1);
       setCurrentPage(newIndex);
       loadPage(newIndex);
     }
   };
   
   const handleRedoPress = () => {
+    // console.log("what2")
     if (currentPage < pageCount - 1) {
       saveCurrentPage();
       const newIndex = currentPage + 1;
-      setPage(newIndex);
+      setPage(newIndex+1);
       setCurrentPage(newIndex);
       loadPage(newIndex);
-      console.log(pages)
+      // console.log(pages)
     }
   };
 
@@ -389,10 +447,10 @@ const handleRedo = () => {
           <Image source={require('../../assets/images/clean.png')} style={styles.clean}/>
         </TouchableOpacity>
         <TouchableOpacity style={styles.buttons} onPress={handleRedoPress}>
-        <Image source={require('../../assets/images/plus.png')} style={styles.plus}/>
+          <Image source={require('../../assets/images/plus.png')} style={styles.plus}/>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttons} onPress={console.log(convertSvgArrayToBase64(pages))}>
-        <Image source={require('../../assets/images/layers.png')} style={styles.layers}/>
+        <TouchableOpacity style={styles.buttons} onPress={handleComicNameChangeVisible}>
+          <Image source={require('../../assets/images/layers.png')} style={styles.layers}/>
         </TouchableOpacity>
       </View>
       <View style={styles.canvasContainer}>
@@ -440,43 +498,6 @@ const handleRedo = () => {
         </G>
       </Svg>
       </View>
-    
-
-
-      {/* Модальное окно выбора толщины */}
-      <Modal
-        visible={widthSelectionVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setWidthSelectionVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent]}>
-            <Text style={styles.modalTitle}>Выберите толщину</Text>
-            <View style={styles.optionsRow}>
-              {widthOptions[tool]?.map((w) => (
-                <TouchableOpacity
-                  key={w}
-                  style={[
-                    styles.optionButton,
-                    width === w && styles.selectedOption,
-                  ]}
-                  onPress={() => handleWidthSelect(w)}
-                >
-                  <Text style={styles.optionText}>{w}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={styles.modalCloseButton}
-              onPress={() => setWidthSelectionVisible(false)}
-            >
-              <Text style={styles.modalCloseButtonText}>Отмена</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-       {/* Модальное окно выбора цвета */}
        <Modal
         visible={colorSelectionVisible}
         transparent
@@ -499,7 +520,41 @@ const handleRedo = () => {
         </View>
       </Modal>
 
-      
+       {/* Модальное окно выбора цвета */}
+        <Modal
+          visible={isModalNameVision}
+          animationType="slide"
+          transparent={true}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Сохранение комикса</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Введите название комикса"
+                value={comicName}
+                onChangeText={handleComicNameChange}
+              />
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                  <Text style={styles.buttonText}>Отмена</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.saveButton,
+                    !isSaveButtonEnabled && styles.disabledButton,
+                  ]}
+                  onPress={handleSavePress}
+                  disabled={!isSaveButtonEnabled}
+                >
+                  <Text style={styles.buttonText}>Готово</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+    
+
       <View style={[styles.instrumentContainer]}>
         <TouchableOpacity style={styles.instrumentItem} onPress={()=>{
           switchToPencil()
@@ -567,12 +622,6 @@ const handleRedo = () => {
           <Image source={require('../../assets/images/addButton.png')} style={styles.addButton}/>
         </TouchableOpacity>
       </View>
-      {/* Кнопка экспорта перемещена вниз */}
-      <View style={styles.exportContainer}>
-        <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
-          <Text style={styles.exportButtonText}>Вывести</Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 };
@@ -587,7 +636,8 @@ const styles = StyleSheet.create({
     height:heightPercentageToDP(5.5),
     alignItems:'center',
     width:widthPercentageToDP(93),
-    flexDirection:'row'
+    flexDirection:'row',
+    marginTop:heightPercentageToDP(4)
   },
   canvas: {
     width:widthPercentageToDP(93),

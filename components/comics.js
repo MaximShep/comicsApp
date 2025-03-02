@@ -9,11 +9,15 @@ export default function ComicsItem(props){
     const{
         image,
         name,
-        date_of_creation
+        date_of_creation,
+        comicsBase64
     } = props
     console.log(date_of_creation)
     return(
-        <TouchableOpacity style={styles.controller} onPress={()=>{navigate("Просмотр")}}>
+        <TouchableOpacity style={styles.controller} onPress={()=>{
+            global.base64Array = comicsBase64
+            navigate("Просмотр")
+          }}>
             <Image source={require('../assets/images/cover.png')} style={styles.image}/>
             <View style={styles.container}>
                 {/* <View> */}
