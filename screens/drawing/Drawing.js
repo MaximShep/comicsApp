@@ -169,15 +169,17 @@ const Drawing = ({navigation}) => {
     const pageData = pages[pageIndex];
     setLines(pageData && pageData.length ? pageData : []);
   };
-
   const convertSvgArrayToBase64 = (svgArray) => {
-    return svgArray.map(svgItem => {
+    const base64Array = svgArray.map(svgItem => {
       const svgString = JSON.stringify(svgItem);
       const base64String = Buffer.from(svgString).toString('base64');
-      console.log(base64String)
       return base64String;
     });
+    // Сохраняем весь массив, а не отдельное значение
+    global.base64Array = base64Array;
+    return base64Array;
   };
+  
 
   const handleUndoPress = () => {
     if (currentPage > 0) {

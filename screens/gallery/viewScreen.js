@@ -9,13 +9,14 @@ import {
   Image,
   SafeAreaView
 } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { widthPercentageToDP, heightPercentageToDP } from 'react-native-responsive-screen';
 import Svg, { Path, G } from 'react-native-svg';
+import { Buffer } from 'buffer';
 
 const ViewScreen = ({navigation}) => {
   /////// for server
   const comicsName = 'Без названия'
-  const page = 10
   const pageCount = 10
   const newPage = page/10
   // if ()
@@ -33,18 +34,57 @@ const ViewScreen = ({navigation}) => {
   const [tool, setTool] = useState('pencil'); // 'pencil', 'marker', 'eraser', 'fill'
   const [color, setColor] = useState('black');
   const [width, setWidth] = useState(5);
-  const [opacity, setOpacity] = useState(1);
   const [widthSelectionVisible, setWidthSelectionVisible] = useState(false);
-  const [colorSelectionVisible, setColorSelectionVisible] = useState(false);
-  const [pencilColor, setPencilColor] = useState('#4A92F4')
-  const [markerColor, setMarkerColor] = useState('#1f1f1f')
-  const [easerColor, setEaserColor] = useState('#1f1f1f')
-  const [fillColor, setFillColor] = useState('#1f1f1f')
-  const [textColor, setTextColor] = useState('#1f1f1f')
+  const [page, setPage] = useState(1);
   // Добавляем новые состояния для истории и redo-стека
   const [history, setHistory] = useState([]); // история изменений (максимум 10)
   const [redoStack, setRedoStack] = useState([]);
+  const [pages, setPages] = useState(Array(pageCount).fill([]));
+  const [currentPage, setCurrentPage] = useState(0);
+  
+  const base64ToSvg = (base64String) => {
+    const svgString = Buffer.from(base64String, 'base64').toString('utf-8');
+    return JSON.parse(svgString); // или другой способ преобразования, в зависимости от структуры SVG
+  };
+  
+  console.log(global.base64Array);
+  const svgArray = global.base64Array.map(base64ToSvg);
+  setPages(svgArray);
+  
 
+  const saveCurrentPage = () => {
+    setPages(prevPages => {
+      const newPages = [...prevPages];
+      newPages[currentPage] = lines;
+      return newPages;
+    });
+  };
+
+  const loadPage = (pageIndex) => {
+    const pageData = pages[pageIndex];
+    setLines(pageData && pageData.length ? pageData : []);
+  };
+
+  const handleUndoPress = () => {
+    if (currentPage > 1) {
+      saveCurrentPage();
+      const newIndex = currentPage - 1;
+      setPage(newIndex);
+      setCurrentPage(newIndex);
+      loadPage(newIndex);
+    }
+  };
+  
+  const handleRedoPress = () => {
+    if (currentPage < pageCount) {
+      saveCurrentPage();
+      const newIndex = currentPage + 1;
+      setPage(newIndex);
+      setCurrentPage(newIndex);
+      loadPage(newIndex);
+    }
+  };
+  
 
   const switchTool = (selectedTool) => {
     if (selectedTool !== 'fill' && tool === selectedTool) {
@@ -232,12 +272,12 @@ const handleRedo = () => {
      
       <View style={[styles.instrumentContainer]}>
         <TouchableOpacity style={styles.instrumentItem} onPress={()=>{
-            //назад
+            handleUndoPress();
         }}>
             <Image source={require('../../assets/images/back.png')} style={styles.arrow}/>
         </TouchableOpacity>
         <TouchableOpacity style={styles.instrumentItem} onPress={()=>{
-            //вперед
+            handleRedoPress();
         }}>
                        <Image source={require('../../assets/images/next.png')} style={styles.arrow}/>
 
