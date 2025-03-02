@@ -256,6 +256,7 @@ const Drawing = ({navigation}) => {
       setPage(newIndex+1);
       setCurrentPage(newIndex);
       loadPage(newIndex);
+      setHistory([])
       // console.log(pages)
     }
   };
