@@ -20,9 +20,9 @@ const base64ToSvg = (base64String) => {
   const svgString = Buffer.from(base64String, 'base64').toString('utf-8');
   return JSON.parse(svgString); // или другой способ преобразования, в зависимости от структуры SVG
 };
-const ViewScreen = ({navigation}) => {
+const ViewScreen = ({route, navigation}) => {
+  const{comicsName}= route.params
   /////// for server
-  const comicsName = 'Без названия'
   const pageCount = 10
   const newPage = page/10
   // if ()
@@ -108,6 +108,7 @@ const ViewScreen = ({navigation}) => {
         </View>
       </View>
       <View style={styles.canvasContainer}>
+      <View style={styles.svgBack}/>
           <Svg style={styles.canvas}>
             <G>
               {lines.map((line, index) => {

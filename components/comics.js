@@ -16,7 +16,9 @@ export default function ComicsItem(props){
     return(
         <TouchableOpacity style={styles.controller} onPress={()=>{
             global.base64Array = comicsBase64
-            navigate("Просмотр")
+            navigate("Просмотр", {
+                comicsName: name
+            })
           }}>
             <Image source={require('../assets/images/cover.png')} style={styles.image}/>
             <View style={styles.container}>

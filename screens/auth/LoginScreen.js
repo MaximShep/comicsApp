@@ -21,38 +21,41 @@ export default function LoginScreen({ navigation }) {
   const buttonScale = useRef(new Animated.Value(1)).current;
 
   const handleLogin = () => {
-    var myHeaders = new Headers();
-            myHeaders.append("Content-Type", "application/json");
+    // var myHeaders = new Headers();
+    //         myHeaders.append("Content-Type", "application/json");
 
-            var raw = JSON.stringify({
-              "login":login.toLowerCase(),
-              "pass": pass.toLowerCase()
-            });
+    //         var raw = JSON.stringify({
+    //           // "login":login.toLowerCase(),
+    //           // "pass": pass.toLowerCase()
+    //           "login":'user1',
+    //           "pass": 'user1'
+    //         });
             
-            var requestOptions = {
-              method: 'POST',
-              headers: myHeaders,
-              body: raw,
-              redirect: 'follow'
-            };
+    //         var requestOptions = {
+    //           method: 'POST',
+    //           headers: myHeaders,
+    //           body: raw,
+    //           redirect: 'follow'
+    //         };
             
-            fetch(ip_address+'/getuser', requestOptions)
-              .then(response => response.json())
-              .then(async result => {
-                if (result != "Данные не совпадают! Проверьте и повторите попытку") {
-                    global.user_id = result[0].id
-                    global.user_name = result[0].name
-                    global.user_login = result[0].login
-                    console.log(result[0])
-                    // Перенаправляем на главный экран или на другой экран после успешного входа
-                    navigation.navigate("ww");
-                  } else {
-                    Alert.alert("Ошибка", "Не удалось выполнить вход. Попробуйте еще раз.");
-                }
-            })
-              .catch(error => console.log('error', error));
+    //         fetch(ip_address+'/getuser', requestOptions)
+    //           .then(response => response.json())
+    //           .then(async result => {
+    //             if (result != "Данные не совпадают! Проверьте и повторите попытку") {
+    //                 global.user_id = result[0].id
+    //                 global.user_name = result[0].name
+    //                 global.user_login = result[0].login
+    //                 console.log(result[0])
+    //                 // Перенаправляем на главный экран или на другой экран после успешного входа
+    //                 navigation.navigate("Далее");
+    //               } else {
+    //                 Alert.alert("Ошибка", "Не удалось выполнить вход. Попробуйте еще раз.");
+    //             }
+    //         })
+    //           .catch(error => console.log('error', error));
             
-            
+    navigation.navigate("Далее");
+
             };
 
   const handleRegisterRedirect = () => {

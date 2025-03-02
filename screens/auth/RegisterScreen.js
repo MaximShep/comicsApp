@@ -7,8 +7,7 @@ import {
   Animated,
   TouchableOpacity,
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
-import axios from "axios";
+
 
 import { ip_address } from "../../config";
 
@@ -28,9 +27,12 @@ export default function RegisterScreen({ navigation }) {
         myHeaders.append("Content-Type", "application/json");
 
         var raw = JSON.stringify({
-        "name": name.toLowerCase(),
-        "login": login.toLowerCase(),
-        "pass": password.toLowerCase()
+        "name": 'user1',
+        "login": 'user1',
+        "pass": 'Роман',
+        // "name": name.toLowerCase(),
+        // "login": login.toLowerCase(),
+        // "pass": password.toLowerCase()
         });
         
         var requestOptions = {

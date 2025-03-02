@@ -6,6 +6,8 @@ import Menu from '../screens/drawing/menu';
 import Profile from '../screens/profile/Profile';
 import ViewScreen from '../screens/gallery/viewScreen';
 import Gallery from '../screens/gallery/gallery';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import LoginScreen from '../screens/auth/LoginScreen';
 import { Ionicons } from "@expo/vector-icons";
 
 
@@ -25,6 +27,15 @@ function Gallary(){
   return(
     <stack.Navigator options={{headerShown: false}}>
     <stack.Screen name="Галерея" options={{headerShown: false}} component={Gallery} />
+    <stack.Screen name="Просмотр" options={{headerShown: false}} component={ViewScreen} />
+  </stack.Navigator>
+)
+}
+
+function ProfileStack(){
+  return(
+    <stack.Navigator options={{headerShown: false}}>
+    <stack.Screen name="Профиль" options={{headerShown: false}} component={Profile} />
     <stack.Screen name="Просмотр" options={{headerShown: false}} component={ViewScreen} />
   </stack.Navigator>
 )
@@ -73,8 +84,9 @@ function Gallary(){
 function AuthStack() {
   return (
     <stack.Navigator screenOptions={{ headerShown: false }}>
-      <stack.Screen name="Login" component={AfterLogin} />
+      <stack.Screen name="Login" component={LoginScreen} />
       <stack.Screen name="Register" component={RegisterScreen} />
+      <stack.Screen name="Далее" component={BottomTab_Navigator} />
     </stack.Navigator>
   );
 }
@@ -106,8 +118,8 @@ function BottomTab_Navigator() {
       >
         
             <bottomTab.Screen options={{headerShown: false}}name="Главная" component={Main_StackNavigator} />
-            <bottomTab.Screen name="Комиксы" component={Gallary} />
-            <bottomTab.Screen name="Профиль" component={Profile} />
+            <bottomTab.Screen options={{headerShown: false}} name="Комиксы" component={Gallary} />
+            <bottomTab.Screen name="Профиль" component={ProfileStack} />
       </bottomTab.Navigator>
   );
 }
@@ -117,7 +129,7 @@ export default function AppNavigation(){
     return(
        
         <NavigationContainer>
-           <BottomTab_Navigator/>
+           <AuthStack/>
         </NavigationContainer>
        
     )

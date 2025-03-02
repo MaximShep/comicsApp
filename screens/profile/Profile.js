@@ -7,8 +7,8 @@ import { widthPercentageToDP, heightPercentageToDP } from 'react-native-responsi
 
 export default function Profile() {
   const user = {
-    name:  global.name,
-    email: global.login,
+    name:  'Роман',
+    email: 'user1',
     avatar: "",
     rating: 4.8,
     recipesCount: 3,
