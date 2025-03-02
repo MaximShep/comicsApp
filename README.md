@@ -38,6 +38,13 @@ yarn install
 ```
 expo start
 ```
+
+или
+
+```
+npx expo start
+```
+
 Затем выберите нужную платформу (Android, iOS).
 
 ИЛИ
